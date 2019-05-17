@@ -8,3 +8,12 @@ The test environment has 2 machines: one is the master, _rear01_, and also expor
 
 The NFS export is a disk added via Vagrant configuration.
 
+It seems that the order of definitions is import, and the order is:
+
+1. Add the disk
+
+1. Create a new controller to don't interfere with the disk created by Vagrant when starting the VM.
+
+1. Attach the disk to the controller.
+
+Also, the disk must be created only once, this means adding a check if the disk already exists when powering up or down the machines.
