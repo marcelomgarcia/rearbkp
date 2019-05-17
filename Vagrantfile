@@ -9,6 +9,37 @@ mkpart primary ext3 1 100% \
 quit
 SCRIPT
 
+$nfs_server = <<-SCRIPT
+# Create directory before exporting it.
+if [ ! -d /data/ ]; then
+    echo "Creating directory '/data'"
+    mkdir /data/
+fi
+mount /dev/sdb1 /data
+# Install NFS package
+yum -y --quiet install nfs-utils
+systemctl enable nfs-server.service
+systemctl start nfs-server.service
+echo "/data   192.168.50.11(rw,sync,no_root_squash,no_subtree_check)" > /etc/exports
+/usr/sbin/exportfs -a
+SCRIPT
+
+$nfs_client = <<-SCRIPT
+# Install NFS package
+yum -y --quiet install nfs-utils
+# Create mount point for the NFS export.
+if [ ! -d /backup/ ]; then
+    echo "Creating directory '/backup'"
+    mkdir /backup/
+fi
+# Check if fstab already configured.
+grep 'backup' /etc/fstab > /dev/null 2>&1
+if [ "$?" -eq 1 ]; then
+    echo "192.168.50.10:/data  /backup   nfs rw,sync,hard,intr  0     0" >> /etc/fstab
+fi
+mount /backup
+SCRIPT
+
 Vagrant.configure("2") do |config|
 
   config.vm.box = "centos/7"
@@ -54,6 +85,8 @@ Vagrant.configure("2") do |config|
         end
     end
     rear01.vm.provision "shell", inline: $parted_sdb
+    rear01.vm.provision "shell", inline: "mkfs.ext3 /dev/sdb1 > /dev/null 2>&1"
+    rear01.vm.provision "shell", inline: $nfs_server
   end
 
   # Define the second server. This will be the slave of pcs cluster.
@@ -64,6 +97,8 @@ Vagrant.configure("2") do |config|
         vb.memory = 2048
         vb.cpus = 2
     end
+    rear02.vm.provision "shell", inline: $nfs_client
+    rear02.vm.provision "shell", inline: "yum -y --quiet install rear"
   end
 
 end
