@@ -1,6 +1,14 @@
 # -*- mode: ruby -*-
 # vi: set ft=ruby :
 
+$parted_sdb = <<-SCRIPT
+parted --script /dev/sdb \
+unit % \
+mklabel msdos \
+mkpart primary ext3 1 100% \
+quit
+SCRIPT
+
 Vagrant.configure("2") do |config|
 
   config.vm.box = "centos/7"
@@ -14,10 +22,10 @@ Vagrant.configure("2") do |config|
   config.vm.provision "shell", inline: "chmod 600 /home/vagrant/.ssh/config"
 
   # Define the first server. This will be the master of pcs cluster.
-  config.vm.define "rear01", primary: true do |machine|
-    machine.vm.hostname = "rear01"
-    machine.vm.network "private_network", ip: "192.168.50.10"
-    machine.vm.provider :virtualbox do |vb|
+  config.vm.define "rear01", primary: true do |rear01|
+    rear01.vm.hostname = "rear01"
+    rear01.vm.network "private_network", ip: "192.168.50.10"
+    rear01.vm.provider :virtualbox do |vb|
         vb.memory = 1024
         vb.cpus = 2
         #
@@ -45,13 +53,14 @@ Vagrant.configure("2") do |config|
             ]
         end
     end
+    rear01.vm.provision "shell", inline: $parted_sdb
   end
 
   # Define the second server. This will be the slave of pcs cluster.
-  config.vm.define "rear02" do |machine|
-    machine.vm.hostname = "rear02"
-    machine.vm.network "private_network", ip: "192.168.50.11"
-    machine.vm.provider :virtualbox do |vb|
+  config.vm.define "rear02" do |rear02|
+    rear02.vm.hostname = "rear02"
+    rear02.vm.network "private_network", ip: "192.168.50.11"
+    rear02.vm.provider :virtualbox do |vb|
         vb.memory = 2048
         vb.cpus = 2
     end
