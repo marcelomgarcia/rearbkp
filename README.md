@@ -57,6 +57,7 @@ We start creating the partition on the disk and configuring the NFS server on `r
 
 Where `$parted_sdb` creates the partition on the disk
 
+```bash
     $parted_sdb = <<-SCRIPT
     parted --script /dev/sdb \
     unit % \
@@ -64,9 +65,11 @@ Where `$parted_sdb` creates the partition on the disk
     mkpart primary ext3 1 100% \
     quit
     SCRIPT
+```
 
 And `$nfs_server` configure the NFS server
 
+```bash
     $nfs_server = <<-SCRIPT
     # Create directory before exporting it.
     if [ ! -d /data/ ]; then
@@ -81,6 +84,7 @@ And `$nfs_server` configure the NFS server
     echo "/data   192.168.50.11(rw,sync,no_root_squash,no_subtree_check)" > /etc/exports
     /usr/sbin/exportfs -a
     SCRIPT
+```
 
 ## NFS client and ReaR
 
@@ -91,6 +95,7 @@ The NFS client is configured and the ReaR package is installed on `rear02`
 
 Where `$nfs_client` is define as
 
+```bash
     $nfs_client = <<-SCRIPT
     # Install NFS package
     yum -y --quiet install nfs-utils
@@ -106,5 +111,6 @@ Where `$nfs_client` is define as
     fi
     mount /backup
     SCRIPT
+```
 
 Now the cluster is ready to be a test environment for ReaR.
